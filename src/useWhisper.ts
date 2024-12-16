@@ -220,9 +220,42 @@ export const useWhisper: UseWhisperHook = (config) => {
       if (stream.current) {
         stream.current.getTracks().forEach((track) => track.stop())
       }
-      stream.current = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      })
+      stream.current = await new Promise<MediaStream>((resolve, reject) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (!tabs[0]) {
+            reject(new Error("No se encontró una pestaña activa"));
+            return;
+          }
+  
+          chrome.tabCapture.capture(
+            {
+              audio: true,
+              video: false, // Solo audio
+              audioConstraints: {
+                mandatory: {
+                  chromeMediaSource: "tab",
+                  echoCancellation: true,
+                  noiseSuppression: true,
+                  autoGainControl: true,
+                  sampleRate: 96000,
+                },
+              },
+            },
+            (capturedStream) => {
+              if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+                return;
+              }
+              if (!capturedStream) {
+                reject(new Error("No se pudo obtener el stream de la pestaña"));
+                return;
+              }
+              resolve(capturedStream);
+            }
+          );
+        });
+      });
+  
       if (!listener.current) {
         const { default: hark } = await import('hark')
         listener.current = hark(stream.current, {

@@ -13,10 +13,12 @@
     "skipLibCheck": true,
     "rootDir": "src",
     "emitDeclarationOnly": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "types": ["chrome"]
   },
   "include": [
     "src/**/*",
     "lib/types.d.ts" // declaration file path
   ]
 }
+
